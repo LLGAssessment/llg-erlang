@@ -6,7 +6,7 @@ llg.beam: llg.erl
 	$(ERLC) "$<"
 run: llg.beam
 	$(ERL) -s llg main -s init stop -noshell
-bench:
+bench: llg.beam
 	$(TIME) $(ERL) -s llg main -s init stop -noshell
 clean:
-	rm llg.beam
+	rm -f llg.beam

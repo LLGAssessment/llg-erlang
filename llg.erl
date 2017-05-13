@@ -7,11 +7,11 @@ read_lines(Acc) -> case io:get_line("") of
         D -> read_lines([D|Acc])
     end.
 
-add_link(Graph, LeftWord, RightWord) ->
+add_link(Graph, {LeftIdx, LeftWord}, {RightIdx, RightWord}) ->
     LeftLast = lists:last(LeftWord),
     [RightFirst|_] = RightWord,
     if LeftLast == RightFirst ->
-        ['$e'|_] = digraph:add_edge(Graph, LeftWord, RightWord);
+        ['$e'|_] = digraph:add_edge(Graph, LeftIdx, RightIdx);
     true ->
         false
     end.
@@ -34,7 +34,6 @@ longest_path(Graph) -> {Path, _} = longest_path(Graph, digraph:vertices(Graph)),
 longest_path(Graph, [CV]) -> longest_path_for_vertex(
         Graph,
         CV,
-        sets:new(),
         [],
         0,
         digraph:out_neighbours(Graph, CV));
@@ -42,7 +41,6 @@ longest_path(Graph, [CV|Tail]) ->
     { CurPath, CurDepth } = longest_path_for_vertex(
         Graph,
         CV,
-        sets:new(),
         [],
         0,
         digraph:out_neighbours(Graph, CV)),
@@ -54,7 +52,6 @@ longest_path(Graph, [CV|Tail]) ->
 longest_path_for_vertex(
     _,
     Vertex,
-    _,
     CurPath,
     Depth,
     []
@@ -62,23 +59,20 @@ longest_path_for_vertex(
 longest_path_for_vertex(
     Graph,
     Vertex,
-    Visited,
     CurPath,
     Depth,
     [LookupHead|LookupTail]
 ) ->
-    case sets:is_element(LookupHead, Visited) of false ->
+    case lists:member(LookupHead, CurPath) of false ->
         {MyPath, MyDepth} = longest_path_for_vertex(
             Graph,
             LookupHead,
-            sets:add_element(Vertex, Visited),
             [Vertex|CurPath],
             Depth + 1,
             digraph:out_neighbours(Graph, LookupHead)),
         {OthersPath, OthersDepth} = longest_path_for_vertex(
             Graph,
             Vertex,
-            Visited,
             CurPath,
             Depth,
             LookupTail),
@@ -88,7 +82,7 @@ longest_path_for_vertex(
             {OthersPath, OthersDepth}
         end;
     true ->
-        longest_path_for_vertex(Graph, Vertex, Visited, CurPath, Depth, LookupTail)
+        longest_path_for_vertex(Graph, Vertex, CurPath, Depth, LookupTail)
     end.
 
 
@@ -100,9 +94,11 @@ main() ->
             read_lines()
         )
     )),
+    Enumerated =
+      lists:zip(lists:seq(1, length(Words)), Words),
 
     Graph = digraph:new([cyclic, private]),
-    lists:map(fun (W) -> digraph:add_vertex(Graph, W) end, Words),
-    add_links(Graph, Words),
-    lists:map(fun(W) -> io:fwrite("~s~n", [W]) end, lists:reverse(longest_path(Graph))),
+    lists:map(fun ({Idx, _}) -> digraph:add_vertex(Graph, Idx) end, Enumerated),
+    add_links(Graph, Enumerated),
+    lists:map(fun(W) -> io:fwrite("~s~n", [lists:nth(W, Words)]) end, lists:reverse(longest_path(Graph))),
     ok.

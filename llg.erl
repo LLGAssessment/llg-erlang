@@ -63,7 +63,7 @@ longest_path_for_vertex(
     Depth,
     [LookupHead|LookupTail]
 ) ->
-    case lists:member(LookupHead, CurPath) of false ->
+    case (lists:member(LookupHead, CurPath) or (Vertex == LookupHead)) of false ->
         {MyPath, MyDepth} = longest_path_for_vertex(
             Graph,
             LookupHead,
